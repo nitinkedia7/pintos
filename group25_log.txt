@@ -15,6 +15,91 @@ File(s) involved with relevant functions:
 Estimated Lines of Code Added/Modified:
 */
 -----------------------------------------------------------------------------------
+Log 9
+Start Date & Time: 2018 09 03 21:30
+Duration:          01 30
+End Date & Time  : 2018 08 31 23:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Comment the code .
+Session Highlights:
+    1. Commented the modified code section to provide better understanding.
+File(s) involved with relevant functions:
+   Almost all files and functions previously modified or added during the completion of Task 2.
+
+Estimated Lines of Code Added/Modified: -
+-----------------------------------------------------------------------------------
+Log 8
+Start Date & Time: 2018 09 01 17:30
+Duration:          03 30
+End Date & Time  : 2018 08 31 21:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Implement lock priority for each lock.
+    2. Implement priority donation for threads considering all possibilities.
+Session Highlights:
+    1. Successfully implemented lock priority.
+    2. Successfully implemented priority donation for threads involving lock and condvar.
+    3. Successfully compiled pintos and 9/27 test cases failed initially
+    4. Successfully implemented priority donation for semaphores.
+    5. Successfully compiled pintos and 7/27 test cases failed.
+
+File(s) involved with relevant functions:
+   1.thread.h : struct thread 
+   2.thread.c : init_thread,thread_get_priority
+   2.synch.c : lock_release,lock_acquire,priority_donate
+
+Estimated Lines of Code Added/Modified: 35
+-----------------------------------------------------------------------------------
+Log 7
+Start Date & Time: 2018 08 31 17:30
+Duration:          05 30
+End Date & Time  : 2018 08 31 23:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Implement acquired_lock list for each thread storing the locks it has acquired_lock.
+    2. Implement seeking link for each thread to the lock it is seeking to acquire.
+    3. Implement the addtion and deletion of the lock from its respective holder's accquired_locks list.
+    4. Implement priority donation for threads 
+Session Highlights:
+    1. Successfully implemented the acquired_lock list attribute in each struct thread along with the 
+        its updation on addition of new locks and deletion of acquired ones.
+    2. Successfully implemented seeking link for each thread pointing to the lock it is seeking.
+    3. Successfully complied pintos and 14/27 test cases failed in make_check till current state.
+    4. Encountered KERNEL_panic condition on implementing priority donation in several cases while applying the
+        algorithm for priority donation.
+
+File(s) involved with relevant functions:
+   1.thread.h : struct thread 
+   2.thread.c : init_thread
+   2.synch.c : lock_init,lock_release,lock_acquire,before_lock
+
+Estimated Lines of Code Added/Modified: 25
+-----------------------------------------------------------------------------------
+Log 6
+Start Date & Time: 2018 08 29 20:30
+Duration:          05 30
+End Date & Time  : 2018 08 30 02:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Implement  thread_set_priority() and thread_get_priority  as per requirement in PintDoc section 2.2.3
+    2. Modify sema_up function to release the highest priority thread first.
+    3. Modify Conditions function to prefer the highest priority thread
+Session Highlights:
+    1. Successfully complied pintos and 14/27 failed in make_check.
+    2. Successfully modified the respective function mentioned in the objectives as per requirement.
+     
+
+File(s) involved with relevant functions:
+   1.thread.c : thread_set_priority,thread_get_priority.
+   2.synch.c : sema_up,cond_wait 
+
+Estimated Lines of Code Added/Modified: 15
+-----------------------------------------------------------------------------------
 Log 5
 Start Date & Time: 2018 08 16 12:00
 Duration:          02 00

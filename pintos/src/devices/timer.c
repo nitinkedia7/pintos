@@ -103,7 +103,8 @@ void
 thread_priority_temporarily_up ()
 {
   thread_current()->current_priority = thread_get_priority();
-  thread_set_priority (PRI_MAX);
+  thread_current ()->priority = PRI_MAX;
+  // thread_set_priority (PRI_MAX);
 }
 
 /* Compares the priority of two thread A and B.
@@ -134,12 +135,7 @@ before(const struct list_elem *a,
         struct thread *s1 = list_entry(a, struct thread,elem);
         struct thread *s2 = list_entry(b, struct thread,elem);
         
-        if(s1->wakeup_at<s2->wakeup_at){
-          return true;
-        }
-        else{
-          return false;
-        }
+        return (s1->wakeup_at<s2->wakeup_at);
 }
 
 /* Blocks the current thread and adds to it sleeper list.
@@ -163,7 +159,8 @@ void thread_block_till(int64_t wakeup_at, list_less_func before UNUSED)
 void
 thread_priority_restore()
 {
-  thread_set_priority ( thread_current()->current_priority );
+  thread_current ()->priority = thread_current()->current_priority;
+  // thread_set_priority ( thread_current()->current_priority );
 }
 
 /* Sleeps for approximately TICKS timer ticks.

@@ -22,6 +22,8 @@ struct lock
   {
     struct thread *holder;      /* Thread holding lock (for debugging). */
     struct semaphore semaphore; /* Binary semaphore controlling access. */
+    struct list_elem elem;      /* For thread->acquired_locks list */
+    int priority;               /* Defined by the highest priority among its waiter thread */  
   };
 
 void lock_init (struct lock *);
@@ -49,3 +51,9 @@ void cond_broadcast (struct condition *, struct lock *);
 #define barrier() asm volatile ("" : : : "memory")
 
 #endif /* threads/synch.h */
+
+/* Compare two locks by their priority */
+bool before_lock (const struct list_elem *, const struct list_elem *, void *);
+/* Compare two condvar waiters by their priority */
+bool before_condvar (const struct list_elem *, const struct list_elem *, void *);
+void priority_donate(struct lock* , int);

@@ -29,6 +29,8 @@ static struct list ready_list;
    that are blocked and sleeping. */
 static struct list sleepers_list;
 
+// static int64_t next_wakeup = INT64_MAX;
+
 /* Insert thread s in sleeper_list according to its wakeup time.*/
 void
 insert_sleeper(struct thread *s)
@@ -156,8 +158,9 @@ thread_start (void)
 void
 thread_set_next_wakeup()
 {
-  if(thread_current()->wakeup_at<next_wakeup){
-    next_wakeup=thread_current()->wakeup_at;
+  int next_wakeup;
+  if(thread_current()->wakeup_at < next_wakeup){
+    next_wakeup = thread_current()->wakeup_at;
   }
 }
 
@@ -169,9 +172,9 @@ void thread_wake(int64_t current_time) {
     struct thread *thread_to_wake=list_entry(thread_to_wake_elem,struct thread, elem);
     thread_unblock(thread_to_wake);
     
-    if(!list_empty(&sleepers_list)){
-      next_wakeup=list_entry(list_front(&sleepers_list),struct thread,elem)->wakeup_at;
-    }
+    // if(!list_empty(&sleepers_list)){
+    //   next_wakeup=list_entry(list_front(&sleepers_list),struct thread,elem)->wakeup_at;
+    // }
   }
 }
 
@@ -267,7 +270,7 @@ thread_create (const char *name, int priority,
 
   /* Add to run queue. */
   thread_unblock (t);
-
+  if (t->priority > thread_current()->priority) thread_yield();
   return tid;
 }
 
@@ -404,7 +407,19 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
+  /* Set the new priority, also back it up */
   thread_current ()->priority = new_priority;
+  thread_current ()->orig_priority = new_priority;
+  /* If a donor exists with greater priority overwrite the newly set priority (priority-donate-lower) */
+  struct thread *t = thread_current();
+  if (!list_empty(&t->acquired_locks)) {
+    struct lock *l = list_entry (list_front( &t->acquired_locks), struct lock, elem);
+    if (t->priority < l->priority) t->priority = l->priority;
+  }
+  /* Check against the highest priority thread in ready queue for possible yield */
+  if ((!list_empty(&ready_list))&&(list_entry(list_front(&ready_list),struct thread, elem)->priority) > new_priority){
+    thread_yield();
+  }
 }
 
 /* Returns the current thread's priority. */
@@ -427,6 +442,7 @@ thread_get_nice (void)
 {
   /* Not yet implemented. */
   return 0;
+
 }
 
 /* Returns 100 times the system load average. */
@@ -529,8 +545,13 @@ init_thread (struct thread *t, const char *name, int priority)
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
+  t->orig_priority = priority; /* Initialise backup of current priority */
   t->magic = THREAD_MAGIC;
+  t->seeking = NULL; /* Initialise lock being seeked */
+  t->sema_seeking = NULL; /* Initialise semaphore without lock being seeked */
   list_push_back (&all_list, &t->allelem);
+  list_init(&t->acquired_locks); /* Initialise the acquired_locks list */
+
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and

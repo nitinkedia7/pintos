@@ -88,9 +88,13 @@ struct thread
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
+    int orig_priority;                  /* (new) Backup of priority. */
     int64_t wakeup_at;
     int current_priority;
     struct list_elem allelem;           /* List element for all threads list. */
+    struct list acquired_locks;         /* (new) List for storing currently held */
+    struct lock *seeking;               /* (new) Lock currently seeking */
+    struct semaphore *sema_seeking;     /* (new) Semaphore currently seeking */          
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
@@ -139,10 +143,6 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
-
-
-/* Store the wakeup time for next thread in sleepers list. */
-static int64_t next_wakeup=INT64_MAX;
 
 /* Lock and release sleepers_list when a thread is accessing the list.*/
 void acquire_sleeper (void);
