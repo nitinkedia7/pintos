@@ -1,0 +1,115 @@
+/* Log Template
+Log #
+Start Date & Time: YYYY MM DD HH:MM
+Duration:          HH MM
+End Date & Time  : YYYY MM DD HH:MM 
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1.
+    2.
+
+File(s) involved with relevant functions:
+    1. filename: function name
+
+Estimated Lines of Code Added/Modified:
+*/
+-----------------------------------------------------------------------------------
+Log 5
+Start Date & Time: 2018 08 16 12:00
+Duration:          02 00
+End Date & Time  : 2018 08 15 02:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Implement lock functionality allowing only one thread to access 
+    the sleeper_list at a time.
+    1. Comment the code to provide a better understanding.
+Session Highlights:
+    1. Successfully complied pintos and 19/27 failed in make_check.
+    2. Successfully implemented the lock functionality on sleeper_list
+     
+
+File(s) involved with relevant functions:
+   1.thread.h : acquire_sleeper, release_sleeper.
+   2.Almost all functions involved in previous log, as comments were added
+    on each function and variable introduced or modified.
+            
+Estimated Lines of Code Added/Modified: 25
+-----------------------------------------------------------------------------------
+Log 4
+Start Date & Time: 2018 08 14 20:36
+Duration:          05 54
+End Date & Time  : 2018 08 15 02:30
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Debug the functions implemented in previous session.
+    1. Complete Subtask 2 & 3.
+Session Highlights:
+    1. Successfully complied pintos and 19/27 failed in make_check.
+    2. struct sleeper was replaced with struct thread, augmented with wakeup_at
+    3. Insert thread to appropriate to ready & sleeper list 
+
+File(s) involved with relevant functions:
+    Almost all functions involved in previous log, as struct had to be replaced.
+    thread.h:thread_wake;
+            
+Estimated Lines of Code Added/Modified: 80
+--------------------------------------------------------------------------------------
+Log 3
+Start Date & Time: 2018 08 12 12:00
+Duration:          03 47
+End Date & Time  : 2018 08 12 15:47
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Start implementing T01
+Session Highlights:
+    1. Completed Subtask 1 by completing set_priority_temporarily_up()
+    2. Understood (doubly) Linked list implementation in list.h/list.c through comments.
+    3. Partially implemented sleeper_list, insert, before but not compiled.
+
+File(s) involved with relevant functions:
+    1. timer.c/timer.h    thread_block_till(wakeup_at,before);
+                            thread_set_next_wakeup();
+                            thread_priority_restore(current_priority);
+                            before();
+    2. list.h/list.c
+
+Estimated Lines of Code Added/Modified: 50
+----------------------------------------------------------------------------------------
+Log 1
+Start Date & Time: 2018 08 08 14:00
+Duration:          01 55
+End Date & Time  : 2018 08 07 15:55 
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    Complete setup of PintOS.
+    Read "Overview of Threads and User Programs within PintOS"
+    and T01 problem statement "PintOS-T01: Timer Alarms without Busy Waits"
+Session Highlights: 
+    Absolute path had to used in place of $HOME in .bash_profile
+    Mutual discussion on working of threads and the context where we start implementation. 
+File(s) involved with relevant functions: None
+
+Estimated Lines of Code Added/Modified: None
+
+------------------------------------------------------------------------------------------
+Log 0
+Start Date & Time: 2018 08 07 14:00
+Duration:          02 30
+End Date & Time  : 2018 08 07  16:30
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Setup PinOS and Boschs Emulator using Readme
+    2. Setup CVS 
+Session Highlights:
+    1. Despite stringently following readme instructions, we were unable to make check.
+    2. CVS setup attempts which can be found in folder "junk". Tutorial at
+        "http://www-mrsrl.stanford.edu/~brian/cvstutorial/" came to rescue. 
+
+File(s) involved with relevant functions: pintos, cvs folder
+Estimated Lines of Code Added/Modified: None

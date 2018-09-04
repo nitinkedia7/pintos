@@ -1,0 +1,15 @@
+# CVS
+/CVS/*
+**/CVS/*
+.cvsignore
+*/.cvsignore
+# Pintos
+cscope.files
+cscope.out
+TAGS
+tags
+*.o
+*.a
+build/
+# VSCode
+pintos/src/.vscode/*
