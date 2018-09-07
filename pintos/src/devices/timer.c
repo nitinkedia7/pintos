@@ -144,7 +144,7 @@ void thread_block_till(int64_t wakeup_at, list_less_func before UNUSED)
 {
   // enum intr_level old_int=intr_disable(); 
   thread_current()->wakeup_at=wakeup_at;
-  
+  thread_set_next_wakeup();
   acquire_sleeper();
   
   insert_sleeper(thread_current());
@@ -184,11 +184,10 @@ timer_sleep (int64_t ticks)
 
   enum intr_level old_int=intr_disable();
 
+  // thread_set_next_wakeup();
   thread_block_till(wakeup_at,before);
 
   intr_set_level(old_int);
-
-  thread_set_next_wakeup();
 
   thread_priority_restore();
 }

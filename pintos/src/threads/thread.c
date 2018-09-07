@@ -29,7 +29,7 @@ static struct list ready_list;
    that are blocked and sleeping. */
 static struct list sleepers_list;
 
-// static int64_t next_wakeup = INT64_MAX;
+static int64_t next_wakeup;
 
 /* Insert thread s in sleeper_list according to its wakeup time.*/
 void
@@ -131,7 +131,7 @@ thread_init (void)
   list_init (&all_list);
   list_init(&sleepers_list);
   lock_init(&sleeper_lock);
-
+  next_wakeup = INT64_MAX;
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
@@ -142,14 +142,15 @@ thread_init (void)
 /* Wakes up current thread and update wakeup time accordingly.*/
 void thread_wake(int64_t current_time) {
   
-  while ((!list_empty(&sleepers_list))&&((list_entry(list_front(&sleepers_list),struct thread, elem)->wakeup_at)<=current_time)){
+  while (next_wakeup <= current_time) {
     struct list_elem *thread_to_wake_elem =list_pop_front(&sleepers_list);
     struct thread *thread_to_wake=list_entry(thread_to_wake_elem,struct thread, elem);
     thread_unblock(thread_to_wake);
     
-    // if(!list_empty(&sleepers_list)){
-    //   next_wakeup=list_entry(list_front(&sleepers_list),struct thread,elem)->wakeup_at;
-    // }
+    if (!list_empty(&sleepers_list)) {
+      next_wakeup = list_entry(list_front(&sleepers_list),struct thread,elem)->wakeup_at;
+    }
+    else next_wakeup = INT64_MAX;
   }
 }
 
@@ -211,7 +212,6 @@ thread_start (void)
 void
 thread_set_next_wakeup()
 {
-  int next_wakeup;
   if(thread_current()->wakeup_at < next_wakeup){
     next_wakeup = thread_current()->wakeup_at;
   }
@@ -240,9 +240,14 @@ thread_tick (void)
     intr_yield_on_return ();
 
 
+  // if (!list_empty(&sleepers_list)) {  
+  //   int64_t wakeup_time = list_entry(list_front(&sleepers_list), struct thread, elem)->wakeup_at;
+  //   if (wakeup_time <= timer_ticks() && wakeup_thread->status == THREAD_BLOCKED) {
+  //     thread_unblock(wakeup_thread);
+  //   }
+  // }
   if (!list_empty(&sleepers_list)) {  
-    int64_t wakeup_time = list_entry(list_front(&sleepers_list), struct thread, elem)->wakeup_at;
-    if (wakeup_time <= timer_ticks() && wakeup_thread->status == THREAD_BLOCKED) {
+    if (next_wakeup <= timer_ticks() && wakeup_thread->status == THREAD_BLOCKED) {
       thread_unblock(wakeup_thread);
     }
   }
