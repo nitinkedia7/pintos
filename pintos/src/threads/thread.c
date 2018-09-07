@@ -65,6 +65,9 @@ static struct list all_list;
 /* Idle thread. */
 static struct thread *idle_thread;
 
+/* Wakeup thread. */
+static struct thread *wakeup_thread;
+
 /* Initial thread, the thread running init.c:main(). */
 static struct thread *initial_thread;
 
@@ -136,6 +139,53 @@ thread_init (void)
   initial_thread->tid = allocate_tid ();
 }
 
+/* Wakes up current thread and update wakeup time accordingly.*/
+void thread_wake(int64_t current_time) {
+  
+  while ((!list_empty(&sleepers_list))&&((list_entry(list_front(&sleepers_list),struct thread, elem)->wakeup_at)<=current_time)){
+    struct list_elem *thread_to_wake_elem =list_pop_front(&sleepers_list);
+    struct thread *thread_to_wake=list_entry(thread_to_wake_elem,struct thread, elem);
+    thread_unblock(thread_to_wake);
+    
+    // if(!list_empty(&sleepers_list)){
+    //   next_wakeup=list_entry(list_front(&sleepers_list),struct thread,elem)->wakeup_at;
+    // }
+  }
+}
+
+
+static void
+wakeup (void *wakeup_started_ UNUSED) 
+{
+  struct semaphore *wakeup_started = wakeup_started_;
+  wakeup_thread = thread_current ();
+  sema_up (wakeup_started);
+
+  for (;;) 
+    {
+      /* Let someone else run. */
+      intr_disable ();
+      thread_block ();
+      intr_enable ();
+      // enum intr_level old_int=intr_disable(); 
+      // thread_block();
+      // intr_set_level(old_int);
+      thread_wake (timer_ticks());
+    }
+}
+
+void
+wakeup_thread_start (void)
+{
+  /* Create the idle thread. */
+  struct semaphore wakeup_thread_started;
+  sema_init (&wakeup_thread_started, 0);
+  thread_create ("wakeup", PRI_MAX, wakeup, &wakeup_thread_started);
+
+  /* Wait for the idle thread to initialize idle_thread. */
+  sema_down (&wakeup_thread_started);
+}
+
 /* Starts preemptive thread scheduling by enabling interrupts.
    Also creates the idle thread. */
 void
@@ -151,6 +201,9 @@ thread_start (void)
 
   /* Wait for the idle thread to initialize idle_thread. */
   sema_down (&idle_started);
+
+  wakeup_thread_start();  
+
 }
 
 /* Set next wakeup if current thread's wakeup time is less 
@@ -164,19 +217,6 @@ thread_set_next_wakeup()
   }
 }
 
-/* Wakes up current thread and update wakeup time accordingly.*/
-void thread_wake(int64_t current_time) {
-  
-  while ((!list_empty(&sleepers_list))&&((list_entry(list_front(&sleepers_list),struct thread, elem)->wakeup_at)<=timer_ticks())){
-    struct list_elem *thread_to_wake_elem =list_pop_front(&sleepers_list);
-    struct thread *thread_to_wake=list_entry(thread_to_wake_elem,struct thread, elem);
-    thread_unblock(thread_to_wake);
-    
-    // if(!list_empty(&sleepers_list)){
-    //   next_wakeup=list_entry(list_front(&sleepers_list),struct thread,elem)->wakeup_at;
-    // }
-  }
-}
 
 /* Called by the timer interrupt handler at each timer tick.
    Thus, this function runs in an external interrupt context. */
@@ -198,7 +238,15 @@ thread_tick (void)
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
-  thread_wake(timer_ticks());
+
+
+  if (!list_empty(&sleepers_list)) {  
+    int64_t wakeup_time = list_entry(list_front(&sleepers_list), struct thread, elem)->wakeup_at;
+    if (wakeup_time <= timer_ticks() && wakeup_thread->status == THREAD_BLOCKED) {
+      thread_unblock(wakeup_thread);
+    }
+  }
+  // thread_wake(timer_ticks());
 }
 
 /* Prints thread statistics. */
