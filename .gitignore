@@ -15,3 +15,5 @@ bochsout.txt
 bochsrc.txt
 # VSCode
 pintos/src/.vscode/*
+# Assignments
+assignments/

@@ -95,7 +95,8 @@ struct thread
     struct list acquired_locks;         /* (new) List for storing currently held */
     struct lock *seeking;               /* (new) Lock currently seeking */
     struct semaphore *sema_seeking;     /* (new) Semaphore currently seeking */          
-
+    int nice; 
+    int recent_cpu; 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
