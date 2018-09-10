@@ -22,4 +22,4 @@
 #define _DIVIDE(x, y) (((int64_t)(x)) * (_F) / (y))
 #define _DIVIDE_INT(x, n) ((x) / (n))
 
- #endif
+#endif

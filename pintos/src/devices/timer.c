@@ -142,17 +142,14 @@ before(const struct list_elem *a,
    Also locks the sleeper list while current thread is accessing it. */
 void thread_block_till(int64_t wakeup_at, list_less_func before UNUSED)
 {
-  // enum intr_level old_int=intr_disable(); 
-  thread_current()->wakeup_at=wakeup_at;
-  thread_set_next_wakeup();
-  acquire_sleeper();
-  
-  insert_sleeper(thread_current());
-  
-  release_sleeper();
+  thread_current()->wakeup_at = wakeup_at;
+  thread_set_next_wakeup(); /* update next_wakeup global variable if required */
 
+  acquire_sleeper();
+  insert_sleeper(thread_current());
+  release_sleeper();
+  
   thread_block();
-  // intr_set_level(old_int);
 }
 
 /* Restores the priority of current thread to 
@@ -182,11 +179,8 @@ timer_sleep (int64_t ticks)
 
   thread_priority_temporarily_up();
 
-  enum intr_level old_int=intr_disable();
-
-  // thread_set_next_wakeup();
-  thread_block_till(wakeup_at,before);
-
+  enum intr_level old_int = intr_disable();
+  thread_block_till (wakeup_at, before);
   intr_set_level(old_int);
 
   thread_priority_restore();

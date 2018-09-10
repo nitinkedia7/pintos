@@ -95,8 +95,8 @@ struct thread
     struct list acquired_locks;         /* (new) List for storing currently held */
     struct lock *seeking;               /* (new) Lock currently seeking */
     struct semaphore *sema_seeking;     /* (new) Semaphore currently seeking */          
-    int nice; 
-    int recent_cpu; 
+    int nice;                           /* (new) Niceness value of thread */
+    int64_t recent_cpu;                 /* (new) Numbers of ticks the thread is in RUNNING state */ 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
@@ -153,6 +153,5 @@ void release_sleeper (void);
 void insert_sleeper(struct thread *);
 void thread_wake(int64_t);
 void thread_set_next_wakeup(void);
-
 
 #endif /* threads/thread.h */
