@@ -28,6 +28,7 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
 tid_t
 process_execute (const char *file_name) 
 {
+  // printf("Hello group25\n");
   char *fn_copy;
   tid_t tid;
 
@@ -39,7 +40,12 @@ process_execute (const char *file_name)
   strlcpy (fn_copy, file_name, PGSIZE);
 
   /* Create a new thread to execute FILE_NAME. */
+  char *save_ptr;
+  file_name = strtok_r (file_name, " ", &save_ptr);
+
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  // printf("%s\n",file_name);
+  
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   return tid;
@@ -88,6 +94,7 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+  while(1);
   return -1;
 }
 
@@ -195,7 +202,8 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (void **esp);
+static bool setup_stack (void **esp, char *args);
+void test_stack(int *t);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -208,6 +216,7 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
 bool
 load (const char *file_name, void (**eip) (void), void **esp) 
 {
+  printf("%s\n", file_name);
   struct thread *t = thread_current ();
   struct Elf32_Ehdr ehdr;
   struct file *file = NULL;
@@ -222,13 +231,25 @@ load (const char *file_name, void (**eip) (void), void **esp)
   process_activate ();
 
   /* Open executable file. */
-  file = filesys_open (file_name);
+  // char *fn_copy = palloc_get_page (0);
+  // if (fn_copy == NULL)
+  //   return TID_ERROR;
+  // char *fn_copy = (char *) malloc((sizeof))
+  char *fn_copy = (char *) malloc(sizeof(char *)*strlen(file_name));
+  strlcpy (fn_copy, file_name, strlen(file_name));
+  
+  char *save_ptr;
+  fn_copy = strtok_r (fn_copy, " ", &save_ptr);
+  printf("open file\n");
+  printf("%s\n", fn_copy);
+  file = filesys_open (fn_copy);
   if (file == NULL) 
     {
+      printf("%s\n", fn_copy);
       printf ("load: %s: open failed\n", file_name);
       goto done; 
     }
-
+  printf("%s\n", fn_copy);
   /* Read and verify executable header. */
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
       || memcmp (ehdr.e_ident, "\177ELF\1\1\1", 7)
@@ -246,6 +267,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   file_ofs = ehdr.e_phoff;
   for (i = 0; i < ehdr.e_phnum; i++) 
     {
+      printf("%s in loop\n", fn_copy);
       struct Elf32_Phdr phdr;
 
       if (file_ofs < 0 || file_ofs > file_length (file))
@@ -300,19 +322,20 @@ load (const char *file_name, void (**eip) (void), void **esp)
           break;
         }
     }
-
+  printf("Building stack");
   /* Set up stack. */
-  if (!setup_stack (esp))
+  if (!setup_stack (esp, file_name))
     goto done;
-
+  test_stack(*esp);
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
 
   success = true;
-
+  // test_stack(*esp);
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
+  printf("%s complete\n", fn_copy);
   return success;
 }
 
@@ -424,10 +447,24 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
   return true;
 }
 
+void
+test_stack(int *t) {
+  int i;
+  int argc = t[1];
+  char **argv;
+
+  argv = (char **) t[2];
+  printf("ARGC:%d ARGV:%x\n", argc, (unsigned int) argv);
+  for (i = 0; i < argc; i++) {
+    printf("Argv[%d] = %x pointing at %s\n",
+            i, (unsigned int)argv[i], argv[i]);
+  }
+}
+
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp) 
+setup_stack (void **esp, char *args) 
 {
   uint8_t *kpage;
   bool success = false;
@@ -436,8 +473,55 @@ setup_stack (void **esp)
   if (kpage != NULL) 
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
-      if (success)
+      if (success) {
         *esp = PHYS_BASE;
+        printf("building stack\n");
+        int argc = 0;
+        char *argv[LOADER_ARGS_LEN/2+1];
+        char *token, *save_ptr;
+        for (token = strtok_r (args, " ", &save_ptr); token != NULL;
+            token = strtok_r (NULL, " ", &save_ptr))
+        {
+          // printf("%s\n", token);
+          argv[argc] = token;
+          argc++;
+        }
+        argv[argc] = NULL;
+
+        int i, bytes_till_now = 0;
+        char *addr[LOADER_ARGS_LEN/2 + 1];
+        size_t arglen;
+
+        for (i = argc-1; i >= 0; i--) {
+          arglen = (strlen(argv[i]) + 1) * (sizeof(char));
+          *esp -= arglen;
+          memcpy(*esp, argv[i], arglen);
+          bytes_till_now += arglen;
+          addr[i] = (char *) *esp;
+        }
+        addr[argc] = NULL;
+
+        uint8_t nulls[3] = {0,0,0};
+        arglen = bytes_till_now % 4;;
+        *esp -= arglen;
+        memcpy (*esp, nulls, arglen);        
+
+        for (i = argc; i >= 0; i--) {
+          *esp -= (sizeof (char *)); 
+          memcpy(*esp, addr + i, (sizeof (char *)));
+        }
+
+        char *top = *esp;
+        *esp -= (sizeof (char *));
+        memcpy(*esp, &top, (sizeof (char *)));
+
+        *esp -= sizeof(int);
+        memcpy(*esp, &argc, sizeof(int));
+
+        argc = 0;
+        *esp -= sizeof (void (*) ());
+        memcpy(*esp, &argc, sizeof (void (*) ()));
+      } 
       else
         palloc_free_page (kpage);
     }

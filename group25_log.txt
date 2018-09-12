@@ -15,6 +15,63 @@ File(s) involved with relevant functions:
 Estimated Lines of Code Added/Modified:
 */
 -----------------------------------------------------------------------------------
+Log 12
+Start Date & Time: 2018 09 10 21:30
+Duration:          01 30
+End Date & Time  : 2018 08 10 23:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Comment the code .
+Session Highlights:
+    1. Commented the modified code section to provide better understanding.
+File(s) involved with relevant functions:
+   Almost all files and functions previously modified or added during the completion of T03.
+
+Estimated Lines of Code Added/Modified: -
+-----------------------------------------------------------------------------------
+Log 11
+Start Date & Time: 2018 09 08 22:30
+Duration:          05 30
+End Date & Time  : 2018 09 09 04:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Create a thread whose purpose is to decay recent_cpu usage and re-compute priority every 100th tick
+    2. Implement nice attribute, recent_cpu usage attribute and load_avg.
+    3. Implement reducing of thread priority after each time slice.
+Session Highlights:
+    1. Implemented nice, recent_cpu usage and load_avg attribiutes by completing their respective functions.
+    2. Implemented thread (scheduler thread) for recalculation of priority and recent usage.
+    3. Implemented reducing of thread priority after every time slice.
+    4. Successfully compiled pintos and all test cases passed.
+File(s) involved with relevant functions:
+   1.thread.h : struct thread 
+   2.thread.c : thread_init,init_thread,thread_priority_recalculate,
+                scheduler,scheduler_thread_start,thread_start,thread_update_recent_cpu,
+                update_load_avg,thread_set_nice,thread_get_nice,thread_get_load_avg,thread_get_recent_cpu
+   3.fixed-point.h : defined various macros
+
+
+Estimated Lines of Code Added/Modified: 80
+-----------------------------------------------------------------------------------
+Log 10
+Start Date & Time: 2018 09 07 21:30
+Duration:          04 30
+End Date & Time  : 2018 09 08 02:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Create a managerial thread whose purpose is to unblock the threads blocked on alarms .
+Session Highlights:
+    1. Implemented the managerial thread (wake_up thread) by changing the existing method of unblocking
+    respective sleeping threads on each timer tick.
+    2. Successfully compiled pintos and 7/27 test cases failed.
+File(s) involved with relevant functions:
+   1.thread.c : thread_ticks(), wakeup(), wakeup_thread_start, thread_start
+
+Estimated Lines of Code Added/Modified: 20
+-----------------------------------------------------------------------------------
 Log 9
 Start Date & Time: 2018 09 03 21:30
 Duration:          01 30
