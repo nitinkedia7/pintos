@@ -28,7 +28,6 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
 tid_t
 process_execute (const char *file_name) 
 {
-  // printf("Hello group25\n");
   char *fn_copy;
   tid_t tid;
 
@@ -39,12 +38,11 @@ process_execute (const char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
 
-  /* Create a new thread to execute FILE_NAME. */
+  /* Create a new thread to execute FILE_NAME, which is the first word of argv */
   char *save_ptr;
   file_name = strtok_r (file_name, " ", &save_ptr);
 
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
-  // printf("%s\n",file_name);
+  tid = thread_create (file_name, PRI_MAX, start_process, fn_copy);
   
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
@@ -94,7 +92,7 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  while(1);
+  // while(1);
   return -1;
 }
 
@@ -216,7 +214,6 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
 bool
 load (const char *file_name, void (**eip) (void), void **esp) 
 {
-  printf("%s\n", file_name);
   struct thread *t = thread_current ();
   struct Elf32_Ehdr ehdr;
   struct file *file = NULL;
@@ -230,26 +227,23 @@ load (const char *file_name, void (**eip) (void), void **esp)
     goto done;
   process_activate ();
 
-  /* Open executable file. */
-  // char *fn_copy = palloc_get_page (0);
-  // if (fn_copy == NULL)
-  //   return TID_ERROR;
-  // char *fn_copy = (char *) malloc((sizeof))
-  char *fn_copy = (char *) malloc(sizeof(char *)*strlen(file_name));
-  strlcpy (fn_copy, file_name, strlen(file_name));
-  
+  /* Copy file_name in fn_copy and extract its first word
+     from possibly many arguments, this is the executable FILE_NAME */
+  char *fn_copy = palloc_get_page (0);
+  if (fn_copy == NULL)
+    return TID_ERROR;
+  strlcpy (fn_copy, file_name, PGSIZE);
+
   char *save_ptr;
   fn_copy = strtok_r (fn_copy, " ", &save_ptr);
-  printf("open file\n");
-  printf("%s\n", fn_copy);
+  
+  /* Open executable file. */
   file = filesys_open (fn_copy);
   if (file == NULL) 
     {
-      printf("%s\n", fn_copy);
       printf ("load: %s: open failed\n", file_name);
       goto done; 
     }
-  printf("%s\n", fn_copy);
   /* Read and verify executable header. */
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
       || memcmp (ehdr.e_ident, "\177ELF\1\1\1", 7)
@@ -267,7 +261,6 @@ load (const char *file_name, void (**eip) (void), void **esp)
   file_ofs = ehdr.e_phoff;
   for (i = 0; i < ehdr.e_phnum; i++) 
     {
-      printf("%s in loop\n", fn_copy);
       struct Elf32_Phdr phdr;
 
       if (file_ofs < 0 || file_ofs > file_length (file))
@@ -322,20 +315,20 @@ load (const char *file_name, void (**eip) (void), void **esp)
           break;
         }
     }
-  printf("Building stack");
   /* Set up stack. */
   if (!setup_stack (esp, file_name))
     goto done;
+
+  /* In this section success is set to true, hence test stack here */
   test_stack(*esp);
+  
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
 
   success = true;
-  // test_stack(*esp);
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
-  printf("%s complete\n", fn_copy);
   return success;
 }
 
@@ -447,6 +440,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
   return true;
 }
 
+/* Boilerplate code to print user stack, for debugging purpose */
 void
 test_stack(int *t) {
   int i;
@@ -475,49 +469,62 @@ setup_stack (void **esp, char *args)
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success) {
         *esp = PHYS_BASE;
-        printf("building stack\n");
-        int argc = 0;
-        char *argv[LOADER_ARGS_LEN/2+1];
+
+        /* Start building the user stack*/
+        /* Use exact specification in Section 3.5.1 PintDoc */
+
+        int argc = 0; /* Argument count */
+        char *argv[LOADER_ARGS_LEN/2+1]; /* Array to store tokenised args */ 
+        
+        /* Use strtok_r to split the argv string */
         char *token, *save_ptr;
         for (token = strtok_r (args, " ", &save_ptr); token != NULL;
             token = strtok_r (NULL, " ", &save_ptr))
         {
-          // printf("%s\n", token);
-          argv[argc] = token;
+          argv[argc] = token; /* Save splitted token */
           argc++;
         }
-        argv[argc] = NULL;
+        argv[argc] = NULL; /* NULL sentinel */
+
+        char *addr[LOADER_ARGS_LEN/2 + 1]; /* Address of each token in stack */
+        size_t arglen; /* Length of each arg in BYTES */
 
         int i, bytes_till_now = 0;
-        char *addr[LOADER_ARGS_LEN/2 + 1];
-        size_t arglen;
-
         for (i = argc-1; i >= 0; i--) {
+          /* Stack grows downward, shift esp downward by arglen and then copy token */
           arglen = (strlen(argv[i]) + 1) * (sizeof(char));
           *esp -= arglen;
           memcpy(*esp, argv[i], arglen);
+          /* Track bytes filled in stack*/
           bytes_till_now += arglen;
+          /* Save this esp to be pushed afterwards */
           addr[i] = (char *) *esp;
         }
-        addr[argc] = NULL;
+        addr[argc] = NULL; 
 
-        uint8_t nulls[3] = {0,0,0};
-        arglen = bytes_till_now % 4;;
+        /* Round off top to nearest muliple of WORD_SIZE (downward)*/  
+        uint8_t word_align[3] = {0,0,0}; /* max(x%4) = 3 */
+        arglen = bytes_till_now % 4;
+        arglen = (4-arglen)%4;
         *esp -= arglen;
-        memcpy (*esp, nulls, arglen);        
+        memcpy (*esp, word_align, arglen);        
 
+        /* Now push addresses of the tokens in stack */
         for (i = argc; i >= 0; i--) {
           *esp -= (sizeof (char *)); 
           memcpy(*esp, addr + i, (sizeof (char *)));
         }
 
+        /* Push curent stack top pointer *esp */
         char *top = *esp;
-        *esp -= (sizeof (char *));
+        *esp -= (sizeof (char **));
         memcpy(*esp, &top, (sizeof (char *)));
 
+        /* Push number of arguments */
         *esp -= sizeof(int);
         memcpy(*esp, &argc, sizeof(int));
-
+        
+        /* Push a fake return address */
         argc = 0;
         *esp -= sizeof (void (*) ());
         memcpy(*esp, &argc, sizeof (void (*) ()));

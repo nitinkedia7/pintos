@@ -15,6 +15,53 @@ File(s) involved with relevant functions:
 Estimated Lines of Code Added/Modified:
 */
 -----------------------------------------------------------------------------------
+Log 15
+Start Date & Time: 2018 09 24 21:00
+Duration:          04 00
+End Date & Time  : 2018 08 25 01:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Comment the code.
+Session Highlights:
+    1. Commented the modified code section to provide better understanding.
+File(s) involved with relevant functions:
+   Almost all files and functions previously modified or added during the completion of T03.
+
+Estimated Lines of Code Added/Modified: -
+-----------------------------------------------------------------------------------
+Log 14
+Start Date & Time: 2018 09 12 18:00
+Duration:          09 00
+End Date & Time  : 2018 08 13 03:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Get the arguments of command line arguments.
+    2. Implement the stack.
+    3. Write to print stack.
+Session Highlights:
+    1. Successfully separated the arguments and file name.
+    2. Successfully implemented the stack.
+    3. Successfully print as given in Assignment.
+File(s) involved with relevant functions:
+   1.process.c : load, test_stack, start_process, process_execute 
+
+Estimated Lines of Code Added/Modified: 80
+-----------------------------------------------------------------------------------
+Log 13
+Start Date & Time: 2018 09 11 21:00
+Duration:          04 00
+End Date & Time  : 2018 08 12 01:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Understand the task and what code changes has to be implemented.
+Session Highlights:
+    1. Followed code changes as per Assignment's appendix to get familar with user programs code.
+
+Estimated Lines of Code Added/Modified: -
+-----------------------------------------------------------------------------------
 Log 12
 Start Date & Time: 2018 09 10 21:30
 Duration:          01 30
