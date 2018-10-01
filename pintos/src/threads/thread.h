@@ -154,4 +154,6 @@ void insert_sleeper(struct thread *);
 void thread_wake(int64_t);
 void thread_set_next_wakeup(void);
 
+bool is_dying_by_tid (tid_t);
+
 #endif /* threads/thread.h */

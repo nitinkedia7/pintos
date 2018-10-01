@@ -10,6 +10,7 @@ TAGS
 tags
 *.o
 *.a
+*.d
 build/
 bochsout.txt
 bochsrc.txt
@@ -17,3 +18,4 @@ bochsrc.txt
 pintos/src/.vscode/*
 # Assignments
 assignments/
+pintos/src/examples/*

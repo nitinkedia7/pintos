@@ -42,7 +42,7 @@ process_execute (const char *file_name)
   char *save_ptr;
   file_name = strtok_r (file_name, " ", &save_ptr);
 
-  tid = thread_create (file_name, PRI_MAX, start_process, fn_copy);
+  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
@@ -92,7 +92,10 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  // while(1);
+  while (!is_dying_by_tid(child_tid) )
+  {
+    thread_yield();
+  }
   return -1;
 }
 
@@ -319,8 +322,8 @@ load (const char *file_name, void (**eip) (void), void **esp)
   if (!setup_stack (esp, file_name))
     goto done;
 
-  /* In this section success is set to true, hence test stack here */
-  test_stack(*esp);
+  /* In this section success is set to true, hence test stack here, only for UP01 */
+  // test_stack(*esp); 
   
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
