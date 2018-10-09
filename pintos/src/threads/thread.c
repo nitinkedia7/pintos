@@ -836,7 +836,7 @@ allocate_tid (void)
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 
-
+/* Get the pointer to a thread by its tid by checking through all thread list. */
 bool
 is_dying_by_tid (tid_t tid)
 {

@@ -3,6 +3,7 @@
 
 #include "filesys/off_t.h"
 
+struct file;
 struct inode;
 
 /* Opening and closing files. */

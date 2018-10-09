@@ -15,6 +15,107 @@ File(s) involved with relevant functions:
 Estimated Lines of Code Added/Modified:
 */
 -----------------------------------------------------------------------------------
+Log 21
+Start Date & Time: 2018 10 08 22:00
+Duration:          01 00
+End Date & Time  : 2018 10 08 23:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Comment the code.
+Session Highlights:
+    1. Commented the modified code section to provide better understanding.
+File(s) involved with relevant functions:
+   Almost all files and functions previously modified or added during the completion of UP03.
+
+Estimated Lines of Code Added/Modified: -
+-----------------------------------------------------------------------------------
+Log 20
+Start Date & Time: 2018 10 06 16:45
+Duration:          03 00
+End Date & Time  : 2018 10 06 19:45
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Implement create, remove, open, filesize, seek, tell and close in syscall.
+    2. Add files attribute to all thread list which contains the pointers to all opened files by that thread.
+Session Highlights:
+    1. Successfully implemented above mentioned functions in syscall.
+    2. Successfully added file list and updated the fd accordingly.
+    3. Successfully compiled 15 out of 76 test cases failed.
+File(s) involved with relevant functions/struct:
+   1.syscall.c : create, remove, open, filesize, seek, tell and close
+   2.thread.c : struct thread
+
+Estimated Lines of Code Added/Modified: 103
+-----------------------------------------------------------------------------------
+Log 19
+Start Date & Time: 2018 10 04 19:00
+Duration:          01 00
+End Date & Time  : 2018 08 25 20:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Comment the code.
+Session Highlights:
+    1. Commented the modified code section to provide better understanding.
+File(s) involved with relevant functions:
+   Almost all files and functions previously modified or added during the completion of UP02.
+
+Estimated Lines of Code Added/Modified: -
+-----------------------------------------------------------------------------------
+Log 18
+Start Date & Time: 2018 10 01 21:30
+Duration:          03 30
+End Date & Time  : 2018 10 02 1:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Implement process_wait()
+    2. Implement sanitation check
+Session Highlights:
+    1. Successfully implemented process_wait()
+    2. Successfully implemented sanitation check
+    3. Successfully compiled 57 out of 76 test cases failed.
+File(s) involved with relevant functions:
+   1.syscall.c : sanity_check, syscall_handler, halt, exit, write
+   2.process.c : process_wait
+   3.thread.c : is_dying_by_tid
+
+Estimated Lines of Code Added/Modified: 35
+-----------------------------------------------------------------------------------
+Log 17
+Start Date & Time: 2018 09 30 14:00
+Duration:          04 30
+End Date & Time  : 2018 08 30 18:30
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Implement syscall_handler()
+    2. Implement halt(),exit() and write() system calls
+Session Highlights:
+    1. Successfully implemented syscall_handler()
+    2. Successfully implemented halt(),exit() and write() system calls
+    3. Successfully compiled 65 out of 76 test cases failed.
+File(s) involved with relevant functions:
+   1.syscall.c : syscall_handler, halt, exit, write
+
+Estimated Lines of Code Added/Modified: 60
+-----------------------------------------------------------------------------------
+Log 16
+Start Date & Time: 2018 09 29 21:00
+Duration:          04 00
+End Date & Time  : 2018 08 30 01:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Understand the task and what code changes has to be implemented.
+    2. Go through the relevant section of PintDoc.
+Session Highlights:
+    1. Identified the files which had to be changed. 
+
+Estimated Lines of Code Added/Modified: -
+-----------------------------------------------------------------------------------
 Log 15
 Start Date & Time: 2018 09 24 21:00
 Duration:          04 00
@@ -26,7 +127,7 @@ Objectives:
 Session Highlights:
     1. Commented the modified code section to provide better understanding.
 File(s) involved with relevant functions:
-   Almost all files and functions previously modified or added during the completion of T03.
+   Almost all files and functions previously modified or added during the completion of UP01.
 
 Estimated Lines of Code Added/Modified: -
 -----------------------------------------------------------------------------------
