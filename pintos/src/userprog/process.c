@@ -65,17 +65,28 @@ start_process (void *file_name_)
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
 
+  struct thread *t = thread_current();
   /* If load failed, quit. */
   palloc_free_page (file_name);
-  if (!success) 
-    thread_exit ();
+  if (!success) { 
+    sema_up(&t->sema_load);
 
+    enum intr_level old_level = intr_disable();
+    sema_up(&t->sema_terminated);
+    thread_block();
+    intr_set_level(old_level);
+
+    thread_exit ();
+  }
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
      arguments on the stack in the form of a `struct intr_frame',
      we just point the stack pointer (%esp) to our stack frame
      and jump to it. */
+  t->load_complete = 1;
+  sema_up(&t->sema_load);
+
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();
 }
@@ -89,11 +100,20 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  while (!is_dying_by_tid(child_tid) )
-  {
-    thread_yield();
-  }
-  return -1;
+  // while (!is_dying_by_tid(child_tid) )
+  // {
+  //   thread_yield();
+  // }
+  // return -1;
+  struct thread *child = get_child_from_tid(child_tid);
+  if (child == NULL) 
+    return -1;
+  sema_down(&child->sema_terminated);
+  int status = child->exit_status;
+  list_remove (&child->sibling_elem);
+  thread_unblock (child);
+
+  return status;
 }
 
 /* Free the current process's resources. */

@@ -720,6 +720,27 @@ init_thread (struct thread *t, const char *name, int priority)
   t->recent_cpu = 0; /* Initialise recent_cpu */
   list_push_back (&all_list, &t->allelem);
   list_init(&t->acquired_locks); /* Initialise the acquired_locks list */
+  list_init(&t->child_list);
+  sema_init(&t->sema_load, 0);
+  sema_init(&t->sema_terminated, 0);
+  sema_init(&t->sema_ack, 0);
+  t->exit_status = -1;
+  t->load_complete = 0;
+
+  int i;
+  for (i = 0; i<MAX_OPEN_FILES; i++)
+  {
+    t->files[i] = NULL;
+  }
+  
+  /* Set parent pointer, initialise children list, push to parent list. */
+  if (t != initial_thread)
+  {
+    t->parent = thread_current();
+    list_push_back (&thread_current()->child_list, &t->sibling_elem);
+  }
+  else
+    t->parent = NULL;
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
@@ -849,3 +870,17 @@ is_dying_by_tid (tid_t tid)
   }
   return true; 
 } 
+
+struct thread *get_child_from_tid (tid_t tid) {
+  struct thread *child = NULL;
+  struct thread *t = thread_current();
+  // struct list child_list = thread_current()->child_list;
+  struct list_elem *e;
+  for (e = list_begin (&t->child_list); e != list_end (&t->child_list); e = list_next (e)) {
+    child = list_entry(e, struct thread, sibling_elem);
+    if (child->tid == tid) {
+      return child;
+    }
+  }
+  return NULL;
+}

@@ -10,6 +10,9 @@
 #include "filesys/filesys.h"
 #include "filesys/file.h"
 #include "threads/synch.h"
+#include "userprog/process.h"
+
+static struct lock lock;
 
 static int sysc = 20;
 static void syscall_handler (struct intr_frame *);
@@ -17,6 +20,7 @@ static void syscall_handler (struct intr_frame *);
 void
 syscall_init (void) 
 {
+  lock_init(&lock);
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
@@ -28,12 +32,38 @@ static int halt (void *esp) {
 /* Check if stack pointer is a valid memory access.
    If yes, then extract and print the status code of the thread and exit. */
 int exit (void *esp) {
-  sanity_check(esp);
+    sanity_check(esp);
   int status = *(int *)esp;
   esp += sizeof(int);
   printf ("%s: exit(%d)\n", thread_current()->name, status);
   thread_exit ();
   return status;
+  // int status = 0;
+
+  // if (esp != NULL) {
+  //   int status = *(int *)esp;
+  //   esp += sizeof(int);
+  // }
+  // else status = -1;
+  
+  // struct thread *t = thread_current();
+  // int i;
+  // for (i = 2; i < MAX_OPEN_FILES; i++) {
+  //   if (t->files[i] != NULL) {
+  //     file_close(t->files[i]); 
+  //   }
+  // }
+
+  // printf ("%s: exit(%d)\n", thread_current()->name, status);
+  // t->exit_status = status;
+  // // process_exit();
+
+  // enum intr_level old_level = intr_disable();
+  // sema_up(&t->sema_terminated);
+  // thread_block();
+  // intr_set_level(old_level);
+  // thread_exit ();
+  // return status;
 }
 
 /* Check if stack pointer is a valid memory access.
@@ -43,14 +73,30 @@ static int exec (void *esp) {
   const char *cmd_line = *(char **)esp;
   esp += sizeof(char *);
   sanity_check(cmd_line);
+
+  lock_acquire(&lock);
+  tid_t child_tid = process_execute(cmd_line);
+  lock_release(&lock);
+
+  struct thread *child = get_child_from_tid(child_tid);
+  if (child == NULL)
+    return -1;
+
+  sema_down(&child->sema_load);
+  if (!child->load_complete) {
+    return -1;
+  }
+  return child_tid;
 }
 
 /* Check if stack pointer is a valid memory access.
    If yes, exit thread */
 static int wait (void *esp) {
   sanity_check(esp);
-  printf ("%s: exit(%d)\n", thread_current()->name, -1);
-  thread_exit();
+  int pid = * (int *) esp;
+  esp += sizeof (int);
+
+  return process_wait(pid);
 }
 
 /* Check if stack pointer is a valid memory access.
@@ -330,6 +376,7 @@ void sanity_check(void *esp) {
   if (esp == NULL || is_kernel_vaddr(esp) || pagedir_get_page(thread_current()->pagedir, esp) == NULL) {
     printf ("%s: exit(%d)\n", thread_current()->name, -1);
     thread_exit ();
+    // exit(NULL);
   }
 }
 
