@@ -38,11 +38,19 @@ process_execute (const char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
 
-  /* Create a new thread to execute FILE_NAME, which is the first word of argv */
-  char *save_ptr;
-  file_name = strtok_r (file_name, " ", &save_ptr);
+  // char *fn_copy1 = palloc_get_page (0);
+  // if (fn_copy1 == NULL)
+  //   return TID_ERROR;
+  // strlcpy (fn_copy1, file_name, PGSIZE);
 
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  char *fn_copy1 = (char *) malloc ((strlen(file_name)+1) * sizeof(char));
+  fn_copy1 = memcpy(fn_copy1, file_name, strlen(file_name)+1);
+
+  /* Create a new thread to execute FILE_NAME, which is the first word of argv */
+  char *save_ptr, *thread_name;
+  thread_name = strtok_r (fn_copy1, " ", &save_ptr);
+
+  tid = thread_create (thread_name, PRI_DEFAULT, start_process, fn_copy);
   
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
@@ -69,24 +77,28 @@ start_process (void *file_name_)
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success) { 
+    t->load_complete = 0;
     sema_up(&t->sema_load);
     sema_down(&t->sema_ack);
     enum intr_level old_level = intr_disable();
+    // t->no_yield = true;
     sema_up(&t->sema_terminated);
     thread_block();
     intr_set_level(old_level);
 
     thread_exit ();
   }
+
+  t->load_complete = 1;
+  sema_up(&t->sema_load);
+  // sema_down(&t->sema_ack);
+
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
      arguments on the stack in the form of a `struct intr_frame',
      we just point the stack pointer (%esp) to our stack frame
      and jump to it. */
-  t->load_complete = 1;
-  sema_up(&t->sema_load);
-
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
   NOT_REACHED ();
 }
@@ -110,7 +122,7 @@ process_wait (tid_t child_tid UNUSED)
     return -1;
   sema_down(&child->sema_terminated);
   int status = child->exit_status;
-  list_remove (&child->sibling_elem);
+  // list_remove (&child->sibling_elem);
   thread_unblock (child);
 
   return status;
@@ -125,7 +137,7 @@ process_exit (void)
 
   if (cur->executable != NULL)
   {
-    file_allow_write(cur->executable);
+    // file_allow_write(cur->executable);
     file_close(cur->executable);
     cur->executable = NULL;
   }
@@ -227,7 +239,7 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (void **esp, char *args);
+static bool setup_stack (void **esp, char *file_name, char *args);
 void test_stack(int *t);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
@@ -239,7 +251,7 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
    and its initial stack pointer into *ESP.
    Returns true if successful, false otherwise. */
 bool
-load (const char *file_name, void (**eip) (void), void **esp) 
+load (const char *cmd_line, void (**eip) (void), void **esp) 
 {
   struct thread *t = thread_current ();
   struct Elf32_Ehdr ehdr;
@@ -256,16 +268,21 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   /* Copy file_name in fn_copy and extract its first word
      from possibly many arguments, this is the executable FILE_NAME */
-  char *fn_copy = palloc_get_page (0);
-  if (fn_copy == NULL)
-    return TID_ERROR;
-  strlcpy (fn_copy, file_name, PGSIZE);
+  // char *fn_copy = palloc_get_page (0);
+  // if (fn_copy == NULL)
+  //   return TID_ERROR;
+  // strlcpy (fn_copy, cmd_line, PGSIZE);
 
-  char *save_ptr;
-  fn_copy = strtok_r (fn_copy, " ", &save_ptr);
+  char *fn_copy = (char *) malloc ((strlen(cmd_line)+1) * sizeof(char));
+  fn_copy = memcpy(fn_copy, cmd_line, strlen(cmd_line)+1);
+  // char *fn_copy;
+  // fn_copy = strlcpy (fn_copy, cmd_line, PGSIZE);
+
+  char *args, *file_name;
+  file_name = strtok_r (fn_copy, " ", &args);
   
   /* Open executable file. */
-  file = filesys_open (fn_copy);
+  file = filesys_open (file_name);
   if (file == NULL) 
     {
       printf ("load: %s: open failed\n", file_name);
@@ -345,7 +362,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
         }
     }
   /* Set up stack. */
-  if (!setup_stack (esp, file_name))
+  if (!setup_stack (esp, file_name, args))
     goto done;
 
   /* In this section success is set to true, hence test stack here, only for UP01 */
@@ -487,7 +504,7 @@ test_stack(int *t) {
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp, char *args) 
+setup_stack (void **esp, char *file_name, char *args) 
 {
   uint8_t *kpage;
   bool success = false;
@@ -505,6 +522,8 @@ setup_stack (void **esp, char *args)
         int argc = 0; /* Argument count */
         char *argv[LOADER_ARGS_LEN/2+1]; /* Array to store tokenised args */ 
         
+        argv[0] = file_name;
+        argc++;
         /* Use strtok_r to split the argv string */
         char *token, *save_ptr;
         for (token = strtok_r (args, " ", &save_ptr); token != NULL;

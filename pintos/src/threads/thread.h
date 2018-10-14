@@ -122,6 +122,7 @@ struct thread
     int exit_status;
     int load_complete;
     struct file* executable;
+    // bool no_yield;
   };
 
 /* If false (default), use round-robin scheduler.

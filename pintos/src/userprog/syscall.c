@@ -54,6 +54,12 @@ int exit (void *esp) {
       file_close(t->files[i]); 
     }
   }
+  // struct lock *l = NULL;
+  // struct list_elem *e;
+  // for (e = list_begin (&t->acquired_locks); e != list_end (&t->acquired_locks); e = list_next (e)) {
+  //   l = list_entry(e, struct lock, elem);
+  //   lock_release(&l);
+  // }
   // file_allow_write(t->executable);
 
   printf ("%s: exit(%d)\n", thread_current()->name, status);
@@ -75,10 +81,11 @@ static int exec (void *esp) {
   const char *cmd_line = *(char **)esp;
   esp += sizeof(char *);
   sanity_check(cmd_line);
-
-  lock_acquire(&lock);
+  // printf('%s', cmd_line);
+  // lock_acquire(&lock);
   tid_t child_tid = process_execute(cmd_line);
-  lock_release(&lock);
+  // if(child_tid != thread_current()->tid)
+  // lock_release(&lock);
 
   struct thread *child = get_child_from_tid(child_tid);
   if (child == NULL)
@@ -109,7 +116,7 @@ static int wait (void *esp) {
     
   sema_down (&child->sema_terminated);
   int status = child->exit_status;
-  list_remove (&child->sibling_elem);
+  // list_remove (&child->sibling_elem);
   thread_unblock (child);
   return status;
 
@@ -159,27 +166,26 @@ static int open (void *esp) {
   const char *file_name = *(char **)esp;
   esp += sizeof(char *);
   sanity_check(file_name);
+  
   lock_acquire(&lock);
   struct file* f = filesys_open(file_name);
   lock_release(&lock);
-  if(f == NULL)
-  {
+  
+  if (f == NULL)
     return -1;
-  }
 
   /* check the first null value in the array list of open files corresponding to the thread and make that the file fd */
   struct thread* t = thread_current();
-  int i;
-  for(i=2; i<MAX_OPEN_FILES; i++)
+  int i = -1;
+  for(i = 2; i < MAX_OPEN_FILES; i++)
   {
-    if(t->files[i] == NULL)
+    if (t->files[i] == NULL)
     {
       t->files[i] = f;
       break;
     }
   }
   return i;
- 
 }
 
 /* Check if stack pointer is a valid memory access.
@@ -215,7 +221,7 @@ static int read (void *esp) {
   
   /* Sanity check for buffer */
   sanity_check(buffer);
-  esp += sizeof(char *);
+  esp += sizeof(void *);
   
   /* Extract size of buffer */
   sanity_check(esp);  
@@ -225,21 +231,21 @@ static int read (void *esp) {
   struct thread* t = thread_current();
   if (fd == 0)
   {
-    // lock_acquire (&lock);
+    lock_acquire (&lock);
 
     int i;
     for (i = 0; i<size; i++)
       *((uint8_t *) buffer+i) = input_getc ();
 
-    // lock_release (&lock);
+    lock_release (&lock);
     return i;
   }
-  else if ((fd > 1 && fd <= MAX_OPEN_FILES) && t->files[fd])
+  else if ((fd > 1 && fd < MAX_OPEN_FILES) && t->files[fd])
   {
-    // lock_acquire(&lock);
-    int read = file_read(t->files[fd], buffer, (off_t)size);
-    // lock_release(&lock);
-    return read;
+    lock_acquire(&lock);
+    off_t read = file_read(t->files[fd], buffer, (off_t) size);
+    lock_release(&lock);
+    return (int) read;
   }
   else return -1;
 }
@@ -273,8 +279,16 @@ static int write (void *esp) {
     putbuf(buffer, size);
     lock_release(&lock);
     return (int) size;
+    // lock_acquire (&lock);
+
+    // int i;
+    // for (i = 0; i<size; i++)
+    //   putchar (*((char *) buffer + i));
+
+    // lock_release (&lock);
+    // return i;
   }
-  else if ((fd > 1 && fd <= MAX_OPEN_FILES) && t->files[fd])
+  else if ((fd > 1 && fd < MAX_OPEN_FILES) && t->files[fd])
   {
     lock_acquire(&lock);
     int write = file_write(t->files[fd], buffer, (off_t) size);
@@ -301,7 +315,7 @@ static int seek (void *esp) {
   struct thread* t = thread_current();
 
   /*check among valid fd*/
-  if((fd > 1 && fd <= MAX_OPEN_FILES) && t->files[fd])
+  if((fd > 1 && fd < MAX_OPEN_FILES) && t->files[fd])
   {
     lock_acquire(&lock);
     file_seek(t->files[fd], (off_t)position);
@@ -321,7 +335,7 @@ static int tell (void *esp) {
   struct thread* t = thread_current();
 
   /*check among valid fd*/
-  if ((fd > 1 && fd <= MAX_OPEN_FILES) && t->files[fd])
+  if ((fd > 1 && fd < MAX_OPEN_FILES) && t->files[fd])
   {
     lock_acquire(&lock);
     int pos = file_tell(t->files[fd]);
@@ -342,7 +356,7 @@ static int close (void *esp) {
   struct thread *t = thread_current();
 
   /*check among valid fd*/
-  if((fd > 1 && fd <= MAX_OPEN_FILES) && t->files[fd])
+  if((fd > 1 && fd < MAX_OPEN_FILES) && t->files[fd])
   {
     file_close(t->files[fd]);
     t->files[fd] = NULL;
@@ -443,7 +457,6 @@ syscall_handler (struct intr_frame *f UNUSED)
   }
   else {
     /* Invalid */
-    printf ("%s: exit(%d)\n", thread_current()->name, -1);
-    thread_exit ();
+    exit(NULL);
   }
 }
