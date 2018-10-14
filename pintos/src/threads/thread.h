@@ -121,6 +121,7 @@ struct thread
     struct semaphore sema_ack;
     int exit_status;
     int load_complete;
+    struct file* executable;
   };
 
 /* If false (default), use round-robin scheduler.

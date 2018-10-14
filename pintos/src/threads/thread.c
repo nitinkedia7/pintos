@@ -550,7 +550,9 @@ thread_update_priority (struct thread *t)
 {
   enum intr_level old_level = intr_disable ();
   int aux = _ADD_INT (_DIVIDE_INT (t->recent_cpu, 4), 2*t->nice);
-  t->priority = _TO_INT_ZERO (_INT_SUB (PRI_MAX, aux));
+  int val = t->priority = _TO_INT_ZERO (_INT_SUB (PRI_MAX, aux));
+  t->priority = val > PRI_MAX ? PRI_MAX : val < PRI_MIN ? PRI_MIN : val;
+  
   intr_set_level (old_level);
 }
 
@@ -726,7 +728,7 @@ init_thread (struct thread *t, const char *name, int priority)
   sema_init(&t->sema_ack, 0);
   t->exit_status = -1;
   t->load_complete = 0;
-
+  t->executable = NULL;
   int i;
   for (i = 0; i<MAX_OPEN_FILES; i++)
   {
