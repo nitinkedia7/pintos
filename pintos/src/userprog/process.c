@@ -17,6 +17,7 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
+#include "threads/malloc.h"
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -38,15 +39,10 @@ process_execute (const char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
 
-  // char *fn_copy1 = palloc_get_page (0);
-  // if (fn_copy1 == NULL)
-  //   return TID_ERROR;
-  // strlcpy (fn_copy1, file_name, PGSIZE);
-
+  /* Create a new thread to execute FILE_NAME, which is the first word of argv */
   char *fn_copy1 = (char *) malloc ((strlen(file_name)+1) * sizeof(char));
   fn_copy1 = memcpy(fn_copy1, file_name, strlen(file_name)+1);
 
-  /* Create a new thread to execute FILE_NAME, which is the first word of argv */
   char *save_ptr, *thread_name;
   thread_name = strtok_r (fn_copy1, " ", &save_ptr);
 
@@ -76,22 +72,22 @@ start_process (void *file_name_)
   struct thread *t = thread_current();
   /* If load failed, quit. */
   palloc_free_page (file_name);
-  if (!success) { 
+  if (!success) {
+    /* This struct is going to terminate, but we have to get this info to its parent */ 
+    /* Load failed flag */
     t->load_complete = 0;
     sema_up(&t->sema_load);
-    sema_down(&t->sema_ack);
-    enum intr_level old_level = intr_disable();
-    // t->no_yield = true;
-    sema_up(&t->sema_terminated);
-    thread_block();
-    intr_set_level(old_level);
-
+    sema_down(&t->sema_load_ack);
+    
+    /* Exit preparations */
+    sema_up(&t->sema_exit);
+    sema_down(&t->sema_exit_ack);
     thread_exit ();
   }
-
+  /* Load successfull */
   t->load_complete = 1;
   sema_up(&t->sema_load);
-  // sema_down(&t->sema_ack);
+  sema_down(&t->sema_load_ack);
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -117,13 +113,20 @@ process_wait (tid_t child_tid UNUSED)
   //   thread_yield();
   // }
   // return -1;
+
+  /* Find child struct from tid */
   struct thread *child = get_child_from_tid(child_tid);
+  
+  /* Given pid is not a direct child or a previously dead child */ 
   if (child == NULL) 
     return -1;
-  sema_down(&child->sema_terminated);
+  
+  /* Wait for valid child thread to exit */
+  sema_down(&child->sema_exit);
   int status = child->exit_status;
-  // list_remove (&child->sibling_elem);
-  thread_unblock (child);
+  list_remove (&child->sibling_elem); /* Remove from parent's child_list */
+  /* Allow child process to exit after extracting exit_status */
+  sema_up(&child->sema_exit_ack);
 
   return status;
 }
@@ -134,13 +137,6 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
-
-  if (cur->executable != NULL)
-  {
-    // file_allow_write(cur->executable);
-    file_close(cur->executable);
-    cur->executable = NULL;
-  }
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
@@ -268,15 +264,8 @@ load (const char *cmd_line, void (**eip) (void), void **esp)
 
   /* Copy file_name in fn_copy and extract its first word
      from possibly many arguments, this is the executable FILE_NAME */
-  // char *fn_copy = palloc_get_page (0);
-  // if (fn_copy == NULL)
-  //   return TID_ERROR;
-  // strlcpy (fn_copy, cmd_line, PGSIZE);
-
   char *fn_copy = (char *) malloc ((strlen(cmd_line)+1) * sizeof(char));
   fn_copy = memcpy(fn_copy, cmd_line, strlen(cmd_line)+1);
-  // char *fn_copy;
-  // fn_copy = strlcpy (fn_copy, cmd_line, PGSIZE);
 
   char *args, *file_name;
   file_name = strtok_r (fn_copy, " ", &args);

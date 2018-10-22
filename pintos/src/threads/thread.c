@@ -361,6 +361,9 @@ thread_create (const char *name, int priority,
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
 
+  /* Push to child_list of parent */
+  list_push_back (&thread_current()->child_list, &t->sibling_elem);
+
   /* Prepare thread for first run by initializing its stack.
      Do this atomically so intermediate values for the 'stack' 
      member cannot be observed. */
@@ -385,7 +388,11 @@ thread_create (const char *name, int priority,
 
   /* Add to run queue. */
   thread_unblock (t);
-  if (t->priority > thread_current()->priority) thread_yield();
+  if (t->priority > thread_current()->priority)
+  {
+    if (intr_context()) intr_yield_on_return();
+    else thread_yield();
+  }  
   return tid;
 }
 
@@ -533,7 +540,8 @@ thread_set_priority (int new_priority)
   }
   /* Check against the highest priority thread in ready queue for possible yield */
   if ((!list_empty(&ready_list))&&(list_entry(list_front(&ready_list),struct thread, elem)->priority) > new_priority){
-    thread_yield();
+    if (intr_context()) intr_yield_on_return();
+    else thread_yield();
   }
 }
 
@@ -569,7 +577,7 @@ thread_update_recent_cpu (struct thread *t)
 /* Finds size of ready_list and takes exponential average of load_avg
    load_avg = (59/60)*load_avg  + (1/60)*unblocked_thread_count */
 void
-update_load_avg ()
+update_load_avg (void)
 {
   int thread_cnt = 0;
   struct list_elem *e;
@@ -603,7 +611,8 @@ thread_set_nice (int nice UNUSED)
   
   /* Check against the highest priority thread in ready queue for possible yield */
   if ((!list_empty(&ready_list))&&(list_entry(list_front(&ready_list),struct thread, elem)->priority) > t->priority){
-    thread_yield();
+    if (intr_context()) intr_yield_on_return();
+    else thread_yield();
   }
 }
 
@@ -722,28 +731,28 @@ init_thread (struct thread *t, const char *name, int priority)
   t->recent_cpu = 0; /* Initialise recent_cpu */
   list_push_back (&all_list, &t->allelem);
   list_init(&t->acquired_locks); /* Initialise the acquired_locks list */
-  list_init(&t->child_list);
-  sema_init(&t->sema_load, 0);
-  sema_init(&t->sema_terminated, 0);
-  sema_init(&t->sema_ack, 0);
-  t->exit_status = -1;
-  t->load_complete = 0;
+  list_init(&t->child_list);     /* Initialise the child_list list */
+  sema_init(&t->sema_load, 0);   /* Initialise load & exit related semaphores */
+  sema_init(&t->sema_exit, 0);
+  sema_init(&t->sema_load_ack, 0);
+  sema_init(&t->sema_exit_ack, 0);
+  t->exit_status = -1;          /* Default exit status */
+  t->load_complete = 0;         /* Default load status */
   t->executable = NULL;
+  
   int i;
-  for (i = 0; i < MAX_OPEN_FILES; i++)
+  for (i = 0; i < MAX_OPEN_FILES; i++) 
   {
-    t->files[i] = NULL;
+    t->files[i] = NULL;        /* Initialise all open file pointers to NULL */  
   }
   
-  /* Set parent pointer, initialise children list, push to parent list. */
+  /* Set parent */
   if (t != initial_thread)
   {
     t->parent = thread_current();
-    // list_push_back (&thread_current()->child_list, &t->sibling_elem);
   }
   else
     t->parent = NULL;
-  // t->no_yield = false;
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
@@ -874,30 +883,19 @@ is_dying_by_tid (tid_t tid)
   return true; 
 } 
 
+/* Iterate over child list to find child with given tid */
 struct thread *get_child_from_tid (tid_t tid) {
-  // struct thread *child = NULL;
-  // struct thread *t = thread_current();
-  // // struct list child_list = thread_current()->child_list;
-  // struct list_elem *e;
-  // for (e = list_begin (&t->child_list); e != list_end (&t->child_list); e = list_next (e)) {
-  //   child = list_entry(e, struct thread, sibling_elem);
-  //   if (child->tid == tid) {
-  //     return child;
-  //   }
-  // }
-  // return NULL;
   struct thread *child = NULL;
-  // struct thread *t = thread_current();
-  // struct list child_list = thread_current()->child_list;
+  struct thread *t = thread_current();
   struct list_elem *e;
-  if (list_empty(&all_list)) {
-    return NULL;
-  }
-  for (e = list_begin (&all_list); e != list_end (&all_list); e = list_next (e)) {
-    child = list_entry(e, struct thread, allelem);
+  if (list_empty(&t->child_list)) {
+    return NULL; /* Empty child list */
+  } 
+  for (e = list_begin (&t->child_list); e != list_end (&t->child_list); e = list_next (e)) {
+    child = list_entry(e, struct thread, sibling_elem);
     if (child->tid == tid) {
       return child;
     }
   }
-  return NULL;
+  return NULL; /* No child exists with given tid */
 }

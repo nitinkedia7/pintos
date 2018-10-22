@@ -31,13 +31,8 @@ static int halt (void *esp) {
 
 /* Check if stack pointer is a valid memory access.
    If yes, then extract and print the status code of the thread and exit. */
+/* exit(NULL) directly terminates offending process */
 int exit (void *esp) {
-  //   sanity_check(esp);
-  // int status = *(int *)esp;
-  // esp += sizeof(int);
-  // printf ("%s: exit(%d)\n", thread_current()->name, status);
-  // thread_exit ();
-  // return status;
   int status = 0;
 
   if (esp != NULL) {
@@ -48,79 +43,65 @@ int exit (void *esp) {
   else status = -1;
   
   struct thread *t = thread_current();
+  /* Close all open files, if any */
   int i;
-  for (i = 2; i < MAX_OPEN_FILES; i++) {
+  for (i = 2; i < MAX_OPEN_FILES; i++) { 
     if (t->files[i] != NULL) {
       file_close(t->files[i]); 
+      t->files[i] = NULL;
     }
   }
-  // struct lock *l = NULL;
-  // struct list_elem *e;
-  // for (e = list_begin (&t->acquired_locks); e != list_end (&t->acquired_locks); e = list_next (e)) {
-  //   l = list_entry(e, struct lock, elem);
-  //   lock_release(&l);
-  // }
-  // file_allow_write(t->executable);
+  /* Close executable file */
+  if (t->executable != NULL)
+  {
+    file_close(t->executable);
+    t->executable = NULL;
+  }
 
+  /* thread name is already correctly set in process_execute() */
   printf ("%s: exit(%d)\n", thread_current()->name, status);
   t->exit_status = status;
-  process_exit();
 
-  enum intr_level old_level = intr_disable();
-  sema_up(&t->sema_terminated);
-  thread_block();
-  intr_set_level(old_level);
+  sema_up(&t->sema_exit);
+  sema_down(&t->sema_exit_ack);
   thread_exit ();
   return status;
 }
 
-/* Check if stack pointer is a valid memory access.
-   If yes, then extract command line address and check its validity. */
 static int exec (void *esp) { 
+  /* Check if stack pointer is a valid memory access. */
   sanity_check(esp);
+  /* Extract command line address and check its validity. */
   const char *cmd_line = *(char **)esp;
   esp += sizeof(char *);
   sanity_check(cmd_line);
-  // printf('%s', cmd_line);
-  // lock_acquire(&lock);
+  
+  /* Create child thread from cmd_line string */
   tid_t child_tid = process_execute(cmd_line);
-  // if(child_tid != thread_current()->tid)
-  // lock_release(&lock);
 
+  /* Find child thread struct to extract its load flag */  
   struct thread *child = get_child_from_tid(child_tid);
   if (child == NULL)
     return -1;
 
+  /* Wait on child's sema_load till its executes its loading process */
   sema_down(&child->sema_load);
-  if (child->load_complete == 0) {
+  if (child->load_complete == 0) { /* Load failed check */
     child_tid = -1;
   }
-  sema_up (&child->sema_ack);
+  /* Allow child to proceed now that load falg has been extracted */
+  sema_up (&child->sema_load_ack);
   return child_tid;
 }
 
-/* Check if stack pointer is a valid memory access.
-   If yes, exit thread */
 static int wait (void *esp) {
+  /* Check if stack pointer is a valid memory access */
   sanity_check(esp);
+  /* Extract pid */
   int pid = * (int *) esp;
   esp += sizeof (int);
 
-
-  struct thread *child = get_child_from_tid (pid);
-
-  /* Either wait has already been called or 
-     given pid is not a child of current thread. */
-  if (child == NULL) 
-    return -1;
-    
-  sema_down (&child->sema_terminated);
-  int status = child->exit_status;
-  // list_remove (&child->sibling_elem);
-  thread_unblock (child);
-  return status;
-
-  // return process_wait(pid);
+  return process_wait(pid);
 }
 
 /* Check if stack pointer is a valid memory access.
@@ -136,9 +117,9 @@ static int create (void *esp) {
   unsigned size = *(unsigned *)esp;
   esp += sizeof(unsigned);
 
-  lock_acquire(&lock);
+  // lock_acquire(&lock);
   bool success = filesys_create(file_name, (off_t)size);
-  lock_release(&lock);
+  // lock_release(&lock);
   return success; 
 }
 
@@ -151,9 +132,9 @@ static int remove (void *esp) {
   esp += sizeof(char *);
   sanity_check(file_name);
 
-  lock_acquire(&lock);
+  // lock_acquire(&lock);
   bool success = filesys_remove (file_name);
-  lock_release(&lock);
+  // lock_release(&lock);
   return success;
 }
 
@@ -167,16 +148,16 @@ static int open (void *esp) {
   esp += sizeof(char *);
   sanity_check(file_name);
   
-  lock_acquire(&lock);
+  // lock_acquire(&lock);
   struct file* f = filesys_open(file_name);
-  lock_release(&lock);
+  // lock_release(&lock);
   
   if (f == NULL)
     return -1;
 
   /* check the first null value in the array list of open files corresponding to the thread and make that the file fd */
   struct thread* t = thread_current();
-  int i = -1;
+  int i;
   for(i = 2; i < MAX_OPEN_FILES; i++)
   {
     if (t->files[i] == NULL)
@@ -185,7 +166,8 @@ static int open (void *esp) {
       break;
     }
   }
-  return i;
+  if (i == MAX_OPEN_FILES) return -1;
+  else return i;
 }
 
 /* Check if stack pointer is a valid memory access.
@@ -197,9 +179,9 @@ static int filesize (void *esp) {
   struct thread* t=thread_current();
   if (fd >= 0 && fd < MAX_OPEN_FILES && t->files[fd])
   {
-    lock_acquire(&lock);    
+    // lock_acquire(&lock);    
     int size = file_length(t->files[fd]);
-    lock_release(&lock);
+    // lock_release(&lock);
     return size;
   }
   else return -1;
@@ -217,7 +199,7 @@ static int read (void *esp) {
 
   /* Extract buffer */
   sanity_check(esp);
-  const void *buffer = *(void **)esp;
+  void *buffer = *(void **)esp;
   
   /* Sanity check for buffer */
   sanity_check(buffer);
@@ -227,6 +209,8 @@ static int read (void *esp) {
   sanity_check(esp);  
   unsigned size = *(unsigned *)esp;
   esp += sizeof(unsigned);
+
+  sanity_check(buffer + size -1);
 
   struct thread* t = thread_current();
   if (fd == 0)
@@ -238,12 +222,12 @@ static int read (void *esp) {
       *((uint8_t *) buffer+i) = input_getc ();
 
     lock_release (&lock);
-    return i;
+    return size;
   }
   else if ((fd > 1 && fd < MAX_OPEN_FILES) && t->files[fd])
   {
     lock_acquire(&lock);
-    off_t read = file_read(t->files[fd], buffer, (off_t) size);
+    int read = file_read(t->files[fd], buffer, size);
     lock_release(&lock);
     return (int) read;
   }
@@ -317,9 +301,9 @@ static int seek (void *esp) {
   /*check among valid fd*/
   if((fd > 1 && fd < MAX_OPEN_FILES) && t->files[fd])
   {
-    lock_acquire(&lock);
+    // lock_acquire(&lock);
     file_seek(t->files[fd], (off_t)position);
-    lock_release(&lock);
+    // lock_release(&lock);
   } 
 }
 
@@ -337,9 +321,9 @@ static int tell (void *esp) {
   /*check among valid fd*/
   if ((fd > 1 && fd < MAX_OPEN_FILES) && t->files[fd])
   {
-    lock_acquire(&lock);
+    // lock_acquire(&lock);
     int pos = file_tell(t->files[fd]);
-    lock_release(&lock);
+    // lock_release(&lock);
     return pos;
   }
   else return -1;
@@ -358,8 +342,10 @@ static int close (void *esp) {
   /*check among valid fd*/
   if((fd > 1 && fd < MAX_OPEN_FILES) && t->files[fd])
   {
+    // lock_acquire(&lock);
     file_close(t->files[fd]);
     t->files[fd] = NULL;
+    // lock_release(&lock);
   }
 }
 

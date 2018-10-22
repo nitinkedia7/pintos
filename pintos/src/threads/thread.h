@@ -112,17 +112,19 @@ struct thread
 
     struct file *files[MAX_OPEN_FILES]; /* arrray of opened files mapped to their fd */
 
-    struct thread *parent;
-    struct list child_list;
-    struct list_elem sibling_elem; 
+    struct thread *parent;              
+    struct list child_list;             /* List of childs to find child by tid */
+    struct list_elem sibling_elem;
   
-    struct semaphore sema_load;
-    struct semaphore sema_terminated;
-    struct semaphore sema_ack;
-    int exit_status;
-    int load_complete;
-    struct file* executable;
-    // bool no_yield;
+    int load_complete;                  /* Indicates if child has transformed to user thread */
+    struct semaphore sema_load;         /* Parent waits for child's loading in this sema */
+    struct semaphore sema_load_ack;     /* Child waits for parent to read it's flag */
+
+    int exit_status;                    /* Stores exit status of child */
+    struct semaphore sema_exit;         /* Analogous to load semaphores */
+    struct semaphore sema_exit_ack;
+
+    struct file* executable;            /* Pointer to executable file of this thread */ 
   };
 
 /* If false (default), use round-robin scheduler.

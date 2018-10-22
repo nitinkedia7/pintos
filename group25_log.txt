@@ -15,10 +15,10 @@ File(s) involved with relevant functions:
 Estimated Lines of Code Added/Modified:
 */
 -----------------------------------------------------------------------------------
-Log 21
-Start Date & Time: 2018 10 08 22:00
-Duration:          01 00
-End Date & Time  : 2018 10 08 23:00
+Log 23
+Start Date & Time: 2018 10 22 19:30
+Duration:          01 30
+End Date & Time  : 2018 10 22 21:00
 Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
 
 Objectives:
@@ -26,9 +26,47 @@ Objectives:
 Session Highlights:
     1. Commented the modified code section to provide better understanding.
 File(s) involved with relevant functions:
-   Almost all files and functions previously modified or added during the completion of UP03.
+   Almost all files and functions previously modified or added during the completion of UP04.
 
 Estimated Lines of Code Added/Modified: -
+-----------------------------------------------------------------------------------
+Log 22
+Start Date & Time: 2018 10 10 10:30 (16:30 - 18:30 break)
+Duration:          05 30
+End Date & Time  : 2018 10 10 18:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Debug previously written code.
+    2. Implement exec and wait.
+Session Highlights:
+    1. Debugged previously written code.
+    2. Implemented exec and wait.
+    4. Successfully compiled 6 out of 76 test cases failed.
+File(s) involved with relevant functions/struct:
+   1.syscall.h : struct thread, wait, exec
+   2.process.c : start_process
+
+Estimated Lines of Code Added/Modified: 130
+-----------------------------------------------------------------------------------
+Log 21
+Start Date & Time: 2018 10 09 21:00
+Duration:          04 00
+End Date & Time  : 2018 10 10 01:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Create data structure for manipulation of child threads of a thread.
+    2. Write synchronization code for information passing between child and parent.
+Session Highlights:
+    1. Created data structure for manipulation of child threads of a thread.
+    2. Wrote synchronization code for information passing between child and parent.
+    3. Successfully compiled 76 out of 76 test cases failed.
+File(s) involved with relevant functions/struct:
+   1.thread.h : struct thread
+   2.process.c : process_wait, start_process
+
+Estimated Lines of Code Added/Modified: 130
 -----------------------------------------------------------------------------------
 Log 20
 Start Date & Time: 2018 10 06 16:45

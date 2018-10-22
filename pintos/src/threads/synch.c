@@ -139,7 +139,11 @@ sema_up (struct semaphore *sema)
   intr_set_level (old_level);
   
   /* th will inserted to ready_list, so check for possible yield here only */
-  if (th != NULL && th->priority > thread_current()->priority) thread_yield();
+  if (th != NULL && th->priority > thread_current()->priority) /*thread_yield();*/
+  {
+    if (intr_context()) intr_yield_on_return();
+    else thread_yield();
+  }  
 }
 
 static void sema_test_helper (void *sema_);
@@ -290,7 +294,6 @@ void
 lock_release (struct lock *lock) 
 {
   ASSERT (lock != NULL);
-  ASSERT (lock_held_by_current_thread (lock));
 
   /* After lock_release has been called, lock release is imminent */
   list_remove(&lock->elem); /* Remove from acquired_locks */
