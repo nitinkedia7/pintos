@@ -15,6 +15,44 @@ File(s) involved with relevant functions:
 Estimated Lines of Code Added/Modified:
 */
 -----------------------------------------------------------------------------------
+Log 25
+Start Date & Time: 2018 10 29 21:00 
+Duration:          03 00
+End Date & Time  : 2018 10 30 00:00
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Implement supplement page table
+    2. Implement frame management
+Session Highlights:
+    1. Succesfully created vm files 
+    2. Implement basic supplement page table using hash table 
+    3. Implement basic frame management using list
+    4. Created wrapper for frame alloc and freeing and used them in process.c
+    5. Only test from userprog and filesys/base running
+File(s) involved with relevant functions/struct:
+    swap.c,swap.h - Empty
+    page.c,page.h - All functions
+    frame.h,frame.c - All functions
+    process.c
+Estimated Lines of Code Added/Modified: 201
+-----------------------------------------------------------------------------------
+Log 24
+Start Date & Time: 2018 10 28 21:30
+Duration:          04 00
+End Date & Time  : 2018 10 29 01:30
+Team Member(s) Present: Abhinav Mishra, Nitin Kedia, Sparsh Bansal, Vivek Raj
+
+Objectives:
+    1. Understand the project to be implemented by going through the pintos document.
+    2. Go through the ppt from OS Lab site
+Session Highlights:
+    1. Went through implementation of supplement page table
+    2. Went through implementation of frame management
+File(s) involved with relevant functions:-
+
+Estimated Lines of Code Added/Modified: -
+-----------------------------------------------------------------------------------
 Log 23
 Start Date & Time: 2018 10 22 19:30
 Duration:          01 30
